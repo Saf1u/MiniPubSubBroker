@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/Saf1u/pubsubshared/pubsubtypes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -79,13 +80,6 @@ const (
 	REGISTER_CONN = "register"
 )
 
-type Message struct {
-	Id      int
-	Topic   string
-	Type    string
-	Content string
-}
-
 func (p *PubSub) HandleRegistration() {
 	for {
 		conn, err := p.registration.Accept()
@@ -97,14 +91,14 @@ func (p *PubSub) HandleRegistration() {
 		conn.Read(buffer[1 : buffer[0]+1])
 		reader := bytes.NewReader(buffer[1 : buffer[0]+1])
 		decoder := gob.NewDecoder(reader)
-		msg := &Message{}
+		msg := &pubsubtypes.Message{}
 		err = decoder.Decode(msg)
 		if err != nil {
 			panic(err)
 		}
 		if msg.Type == REGISTER_CONN {
 			id := p.topics[msg.Topic].AddSuscriber(conn)
-			regMsg := &Message{Id: id}
+			regMsg := &pubsubtypes.Message{Id: id}
 			p.topics[msg.Topic].subscribers[id].put(*regMsg)
 		} else {
 			p.topics[msg.Topic].RemoveSubscriber(msg.Id)
@@ -124,7 +118,7 @@ func (p *PubSub) AcceptMessages() {
 				panic(err)
 			}
 			decoder := gob.NewDecoder(bytes.NewReader(data[0:n]))
-			msg := &Message{}
+			msg := &pubsubtypes.Message{}
 			err = decoder.Decode(msg)
 			if err != nil {
 				panic(err)
@@ -142,7 +136,7 @@ type Topic struct {
 	lock           *sync.Mutex
 }
 
-func (t *Topic) Publish(message Message) error {
+func (t *Topic) Publish(message pubsubtypes.Message) error {
 	for _, subscriber := range t.subscribers {
 		go subscriber.put(message)
 	}
@@ -152,7 +146,7 @@ func (t *Topic) Publish(message Message) error {
 func (t *Topic) AddSuscriber(conn net.Conn) int {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	sus := &subscriber{t.nextIdentifier, make(chan Message, 500), bytes.NewBuffer(make([]byte, 0, 1024)), conn}
+	sus := &subscriber{t.nextIdentifier, make(chan pubsubtypes.Message, 500), bytes.NewBuffer(make([]byte, 0, 1024)), conn}
 	t.subscribers[t.nextIdentifier] = sus
 	log.Println("subscriber registered on topic: ", t.topic, " with id:", t.nextIdentifier)
 	id := t.nextIdentifier
@@ -171,7 +165,7 @@ func (t *Topic) AddSuscriber(conn net.Conn) int {
 }
 
 func (t *Topic) RemoveSubscriber(id int) int {
-	t.subscribers[id].put(Message{Type: CLOSE_CONN})
+	t.subscribers[id].put(pubsubtypes.Message{Type: CLOSE_CONN})
 	t.numberOfSubs--
 	delete(t.subscribers, id)
 	log.Println("subscriber removed from topic: ", t.topic, " with id:", id)
@@ -181,12 +175,12 @@ func (t *Topic) RemoveSubscriber(id int) int {
 
 type subscriber struct {
 	Id      int
-	message chan Message
+	message chan pubsubtypes.Message
 	buffer  *bytes.Buffer
 	conn    net.Conn
 }
 
-func (s *subscriber) put(message Message) error {
+func (s *subscriber) put(message pubsubtypes.Message) error {
 	if message.Type == CLOSE_CONN {
 		close(s.message)
 		return nil
