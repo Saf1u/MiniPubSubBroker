@@ -75,18 +75,13 @@ func BuildPubSub(publishAddr string, registerAddr string, topicNames []string) *
 	return pubsub
 }
 
-const (
-	CLOSE_CONN    = "close"
-	REGISTER_CONN = "register"
-)
-
 func (p *PubSub) HandleRegistration() {
+	buffer := make([]byte, 1024)
 	for {
 		conn, err := p.registration.Accept()
 		if err != nil {
 			panic(err)
 		}
-		buffer := make([]byte, 1024)
 		conn.Read(buffer[0:1])
 		conn.Read(buffer[1 : buffer[0]+1])
 		reader := bytes.NewReader(buffer[1 : buffer[0]+1])
@@ -96,7 +91,7 @@ func (p *PubSub) HandleRegistration() {
 		if err != nil {
 			panic(err)
 		}
-		if msg.Type == REGISTER_CONN {
+		if msg.Type == pubsubtypes.REGISTER_CONN {
 			id := p.topics[msg.Topic].AddSuscriber(conn)
 			regMsg := &pubsubtypes.Message{Id: id}
 			p.topics[msg.Topic].subscribers[id].put(*regMsg)
@@ -165,7 +160,7 @@ func (t *Topic) AddSuscriber(conn net.Conn) int {
 }
 
 func (t *Topic) RemoveSubscriber(id int) int {
-	t.subscribers[id].put(pubsubtypes.Message{Type: CLOSE_CONN})
+	t.subscribers[id].put(pubsubtypes.Message{Type: pubsubtypes.CLOSE_CONN})
 	t.numberOfSubs--
 	delete(t.subscribers, id)
 	log.Println("subscriber removed from topic: ", t.topic, " with id:", id)
@@ -181,7 +176,7 @@ type subscriber struct {
 }
 
 func (s *subscriber) put(message pubsubtypes.Message) error {
-	if message.Type == CLOSE_CONN {
+	if message.Type == pubsubtypes.CLOSE_CONN {
 		close(s.message)
 		return nil
 	}

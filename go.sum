@@ -1,5 +1,7 @@
 github.com/Saf1u/pubsubshared v0.0.0-20230220153351-ab6360cd0915 h1:/VN8noQlatAqMHIl7x3GEg49hFxuQ2mkCpCjliMsWQc=
 github.com/Saf1u/pubsubshared v0.0.0-20230220153351-ab6360cd0915/go.mod h1:UgZbakHv7NdC0pMRQYDK+apMijMoyV8MBBsA6qPijsI=
+github.com/Saf1u/pubsubshared v0.0.0-20230220155826-a7e115e9c736 h1:ecLomUcKfixdMR86H/PoLk90YyPfFPYwJ+dhRsm592A=
+github.com/Saf1u/pubsubshared v0.0.0-20230220155826-a7e115e9c736/go.mod h1:UgZbakHv7NdC0pMRQYDK+apMijMoyV8MBBsA6qPijsI=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
