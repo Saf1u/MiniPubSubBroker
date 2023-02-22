@@ -73,7 +73,7 @@ func BuildPubSub(publishAddr string, registerAddr string, topicNames []string) *
 		pubsub.topics[topicReq.Topic] = &Topic{topicReq.Topic, make(map[int]*subscriber), 0, 0, &sync.Mutex{}}
 		c.JSON(200, nil)
 	})
-	log.Println("registered topics:", topicNames)
+	log.Println("\u001b[32m", "registered topics:", topicNames)
 	go pubsub.server.ListenAndServe()
 	return pubsub
 }
@@ -82,6 +82,7 @@ func (p *PubSub) SignalHandler() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	<-sig
+	log.Println("\u001b[32m", "shutting down....")
 	for _, topic := range p.topics {
 		topic.lock.Lock()
 		for _, subs := range topic.subscribers {
@@ -89,6 +90,7 @@ func (p *PubSub) SignalHandler() {
 		}
 
 	}
+	os.Exit(0)
 }
 
 func (p *PubSub) HandleRegistration() {
@@ -159,7 +161,7 @@ func (t *Topic) AddSuscriber(conn net.Conn) int {
 	defer t.lock.Unlock()
 	sus := &subscriber{t.nextIdentifier, make(chan pubsubtypes.Message, 500), bytes.NewBuffer(make([]byte, 0, 1024)), conn}
 	t.subscribers[t.nextIdentifier] = sus
-	log.Println("subscriber registered on topic: ", t.topic, " with id:", t.nextIdentifier)
+	log.Println("\u001b[32m", "subscriber registered on topic: ", t.topic, " with id:", t.nextIdentifier)
 	id := t.nextIdentifier
 	t.nextIdentifier++
 	t.numberOfSubs++
@@ -179,7 +181,7 @@ func (t *Topic) RemoveSubscriber(id int) int {
 	t.subscribers[id].put(pubsubtypes.Message{Type: pubsubtypes.CLOSE_CONN})
 	t.numberOfSubs--
 	delete(t.subscribers, id)
-	log.Println("subscriber removed from topic: ", t.topic, " with id:", id)
+	log.Println("\u001b[32m", "subscriber removed from topic: ", t.topic, " with id:", id)
 	return id
 
 }
@@ -205,7 +207,7 @@ func (s *subscriber) read() error {
 		msg, stat := <-s.message
 		if !stat {
 			s.conn.Close()
-			log.Println(s.Id, ":closed subscription on topic")
+			log.Println("\u001b[32m", s.Id, ":closed subscription on topic")
 			return nil
 		}
 		s.buffer.Reset()
