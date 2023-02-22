@@ -8,7 +8,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/Saf1u/pubsubshared/pubsubtypes"
 	"github.com/gin-gonic/gin"
@@ -73,6 +76,19 @@ func BuildPubSub(publishAddr string, registerAddr string, topicNames []string) *
 	log.Println("registered topics:", topicNames)
 	go pubsub.server.ListenAndServe()
 	return pubsub
+}
+
+func (p *PubSub) SignalHandler() {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+	<-sig
+	for _, topic := range p.topics {
+		topic.lock.Lock()
+		for _, subs := range topic.subscribers {
+			subs.conn.Close()
+		}
+
+	}
 }
 
 func (p *PubSub) HandleRegistration() {
